@@ -85,6 +85,8 @@ func GetLoans() Loans {
 func AddLoan(l *Loan) {
 	l.ID = getNextID()
 	l.TotalPrice = getTotalPrice(l.Product, l.Month, l.Price)
+	l.CreatedOn = time.Now().UTC().String()
+	l.UpdatedOn = time.Now().UTC().String()
 	loansList = append(loansList, l)
 }
 
