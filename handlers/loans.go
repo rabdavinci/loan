@@ -37,6 +37,11 @@ func (l *Loans) AddLoan(rw http.ResponseWriter, r *http.Request) {
 
 	loan := r.Context().Value(KeyLoan{}).(data.Loan)
 	data.AddLoan(&loan)
+
+	err := loan.ToJSON(rw)
+	if err != nil {
+		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
+	}
 }
 
 type KeyLoan struct{}

@@ -46,7 +46,6 @@ func validateProduct(fl validator.FieldLevel) bool {
 var rangeList = []int{3, 6, 9, 12, 18, 24}
 
 func validateRange(fl validator.FieldLevel) bool {
-	return true
 	for _, v := range rangeList {
 		if fl.Field().Int() == int64(v) {
 			return true
@@ -65,6 +64,11 @@ type Loans []*Loan
 //
 // https://golang.org/pkg/encoding/json/#NewEncoder
 func (l *Loans) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(l)
+}
+
+func (l *Loan) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(l)
 }
