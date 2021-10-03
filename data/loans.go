@@ -10,18 +10,20 @@ import (
 )
 
 type Loan struct {
-	ID        int     `json:"id" validate:"unique"`
-	Product   string  `json:"product" validate:"product"`
-	Phone     string  `json:"phone" validate:"e164"`
-	Month     int     `json:"month" validate:"range"`
-	Price     float32 `json:"price" validate:"gt=0"`
-	CreatedOn string  `json:"-"`
-	UpdatedOn string  `json:"-"`
+	ID         int     `json:"id"`
+	Product    string  `json:"product" validate:"product"`
+	Phone      string  `json:"phone" validate:"e164"`
+	Month      int     `json:"month" validate:"range"`
+	Price      float32 `json:"price" validate:"gt=0"`
+	TotalPrice float32
+	CreatedOn  string `json:"-"`
+	UpdatedOn  string `json:"-"`
 }
 
 type Product struct {
-	Name  string
-	Range []int
+	Name       string
+	PeriodFree int
+	Percent    int
 }
 
 func (l *Loan) Validate() error {
@@ -41,7 +43,10 @@ func validateProduct(fl validator.FieldLevel) bool {
 	return false
 }
 
+var rangeList = []int{3, 6, 9, 12, 18, 24}
+
 func validateRange(fl validator.FieldLevel) bool {
+	return true
 	for _, v := range rangeList {
 		if fl.Field().Int() == int64(v) {
 			return true
@@ -75,7 +80,29 @@ func GetLoans() Loans {
 
 func AddLoan(l *Loan) {
 	l.ID = getNextID()
+	l.TotalPrice = getTotalPrice(l.Product, l.Month, l.Price)
 	loansList = append(loansList, l)
+}
+
+func getTotalPrice(product string, month int, price float32) float32 {
+	prod, _ := findProduct(product)
+
+	if month <= prod.PeriodFree {
+		return price
+	}
+
+	return price + price*float32((month-prod.PeriodFree)*prod.Percent)/(100*3)
+}
+
+var ErrProductNotFound = fmt.Errorf("Product not found")
+
+func findProduct(name string) (*Product, error) {
+	for _, p := range productList {
+		if p.Name == name {
+			return p, nil
+		}
+	}
+	return nil, ErrProductNotFound
 }
 
 var ErrLoanNotFound = fmt.Errorf("Loan not found")
@@ -87,38 +114,45 @@ func getNextID() int {
 
 // loansList is a hard coded list of loans for this
 // example data source
-var rangeList = []int{3, 6, 9, 12, 18, 24}
+
 var productList = []*Product{
 	&Product{
-		Name:  "Смартфон",
-		Range: []int{3, 6, 9},
+		Name:       "Смартфон",
+		PeriodFree: 9,
+		Percent:    3,
 	},
 	&Product{
-		Name:  "Компьютер",
-		Range: []int{3, 6, 9, 12},
+		Name:       "Компьютер",
+		PeriodFree: 12,
+		Percent:    4,
 	},
 	&Product{
-		Name:  "Телевизор",
-		Range: []int{3, 6, 9, 12, 18},
+		Name:       "Телевизор",
+		PeriodFree: 18,
+		Percent:    5,
 	},
 }
+
+// hardcoding example loans
 var loansList = []*Loan{
 	&Loan{
-		ID:        1,
-		Product:   "Смартфон",
-		Phone:     "+998995881375",
-		Month:     3,
-		Price:     1000,
-		CreatedOn: time.Now().UTC().String(),
-		UpdatedOn: time.Now().UTC().String(),
+		ID:         1,
+		Product:    "Смартфон",
+		Phone:      "+998995881375",
+		Month:      3,
+		Price:      1000,
+		TotalPrice: getTotalPrice("Смартфон", 3, 1000),
+		CreatedOn:  time.Now().UTC().String(),
+		UpdatedOn:  time.Now().UTC().String(),
 	},
 	&Loan{
-		ID:        2,
-		Product:   "Смартфон",
-		Phone:     "+998995881375",
-		Month:     24,
-		Price:     1000,
-		CreatedOn: time.Now().UTC().String(),
-		UpdatedOn: time.Now().UTC().String(),
+		ID:         2,
+		Product:    "Смартфон",
+		Phone:      "+998995881375",
+		Month:      24,
+		Price:      1000,
+		TotalPrice: getTotalPrice("Смартфон", 24, 1000),
+		CreatedOn:  time.Now().UTC().String(),
+		UpdatedOn:  time.Now().UTC().String(),
 	},
 }
